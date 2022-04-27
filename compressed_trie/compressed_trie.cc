@@ -7,7 +7,7 @@ struct Node {
   int Lv;
   Edge** edge_table = nullptr;
   vector <Edge*> children;
-  int suffix_index;
+  int suffix_index = 0;
   int _color;
   int _next_edge;
 };
@@ -27,7 +27,7 @@ Edge* createTrieEdge(Node* target, int* edge_label) {
   return E;
 }
 
-Node* createTrieNode(int level, int suffix_index = 0, bool IS_LEAF_NODE = false) {
+Node* createTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
 
   Node* N = new Node;
   N->Lv = level;
@@ -89,6 +89,25 @@ void collectNodes(Node* root) {
     delete[] curr->edge_table;
   }
 }
+
+void visitLeafNodes(Node* root) {
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (curr->_next_edge < curr->children.size()) {
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+    } else if (curr->suffix_index != 0){
+      cout << "arrived at leaf: " << curr->suffix_index << endl;
+    } else {
+      cout << "visited all nodes" << endl;
+    }
+    node_s.pop();
+  }
+}
 /*
 void contract(Node* root) {
   stack<Edge*> edge_stack;
@@ -121,11 +140,13 @@ int main() {
   int sample_size = 7;
   //char sample[] = {'2', '1', '2', '3', '4', '3', '$', '\0'};
   int k = 0;
-  Node* root = createTrieNode(k);
+  Node* root = createTrieNode(k, 0);
   for (int i = 0; i < sample_size; i++) {
     insertSuffix(root, sample2 + i, i + 1);
   }
   collectNodes(root);
+  cout << endl;
+  visitLeafNodes(root);
   // insertSuffix(root, sample + 1);
   // insertSuffix(root, sample + 2);
   // insertSuffix(root, sample + 5);
