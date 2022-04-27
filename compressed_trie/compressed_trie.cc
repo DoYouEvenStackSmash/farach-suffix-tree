@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
-#define ALPHABET_SIZE 256
 using namespace std;
+
+#define ALPHABET_SIZE 256
 
 struct Edge;
 
@@ -22,7 +23,7 @@ struct Edge {
 Edge* createTrieEdge(Node* target, int* edge_label) {
   Edge* E = new Edge;
   E->label = edge_label;
-  cout << "new Edge: label " << *edge_label << endl;
+  //cout << "new Edge: label " << *edge_label << endl;
   E->label_len = 1; //edge must have a label
   E->target_node = target;
   return E;
@@ -31,12 +32,16 @@ Edge* createTrieEdge(Node* target, int* edge_label) {
 Node* createTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
 
   Node* N = new Node;
+  //cout << N << endl;
   N->Lv = level;
+  // cout << "node" << N << " [label=" << '\"' << N->Lv;
   if (!IS_LEAF_NODE) {
     N->edge_table = new Edge*[ALPHABET_SIZE]();
-    cout << "new Node: level " << level << endl;
+    // cout << "\"];" << endl;
+    //cout << "new Node: level " << level << endl;
   } else {
-    cout << "new Leaf: level " << level << endl;
+    //cout << "new Leaf: level " << level << endl;
+    // cout << "$\"];" << endl;
     N->suffix_index = suffix_index;
   }
   N->_color = 0;
@@ -77,7 +82,7 @@ void collectNodes(Node* root) {
     curr = node_q.front();
     node_q.pop();
     if (curr->edge_table == nullptr) {
-      cout << "Leaf node encountered: " << curr->suffix_index << endl;
+      //cout << "Leaf node encountered: " << curr->suffix_index << endl;
       continue;
     }
 
@@ -87,6 +92,7 @@ void collectNodes(Node* root) {
         node_q.push(curr->edge_table[i]->target_node);
       }
     }
+    // sort(curr->children.begin(), curr->children.end(), compareEdge);
     delete[] curr->edge_table;
   }
 }
@@ -118,7 +124,7 @@ void deleteCollectedTrie(Node* root) {
     curr = node_q.front();
     node_q.pop();
     if (curr->children.size() == 0) {
-      cout << "deleting leaf node: " << curr->suffix_index << endl;
+      //cout << "deleting leaf node: " << curr->suffix_index << endl;
       delete curr;
       continue;
     }
@@ -129,31 +135,64 @@ void deleteCollectedTrie(Node* root) {
     delete curr;
   }
 }
-/*
-void contract(Node* root) {
-  stack<Edge*> edge_stack;
-  edge_stack.push(createEdge(nullptr));
-  Node* curr = root; //assumption is that root has at least 2 children
-
-  while (curr != nullptr) {
+void contractTrie(Node* root) {
+  stack<Edge*> edge_s;
+  Edge* base = createTrieEdge(root,nullptr);
+  edge_s.push(base);
+  Node* curr = nullptr;
+  while (!edge_s.empty()) {
+    curr = edge_s.top()->target_node;
     if (curr->children.size() == 1) {
-      edge_stack.top()->label_len = edge_stack.top()->label_len + curr->children[0]->label_len;
-      edge_stack.top()->target = curr->children[0]->target;
+      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
+      edge_s.top()->target_node = curr->children[0]->target_node;
       delete curr->children[0];
       delete curr;
-      curr = edge_stack.top()->target;
-    } else if (curr->next_edge < curr->children.size()) {
-      edge_stack.push(curr->children[curr->next_edge]);
-      curr->next_edge++;
-      curr = edge_stack.top()->target;
-    } else { //all children visited
-      edge_stack.pop();
-      curr = edge_stack.top()->target;
+    } else if (curr->_next_edge < curr->children.size()) {
+      edge_s.push(curr->children[curr->_next_edge]);
+      curr->_next_edge++;
+      //curr = edge_s
+    } else {
+      curr->_next_edge = 0;
+      edge_s.pop();
     }
   }
+  delete base;
 }
-*/
+void displayTrie(Node* root) {
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (!curr->_color) {
+      cout << "node" << curr << " [label=" << '\"' << curr->Lv << "\"];" << endl;
+      curr->_color = 1;
+    }
+    if (curr->_next_edge < curr->children.size()) {
+      cout << "node" << curr << "->" << "node" << curr->children[curr->_next_edge]->target_node << "[label=\"";
 
+      for (int i = 0; i < curr->children[curr->_next_edge]->label_len; i++) {
+        if (*(curr->children[curr->_next_edge]->label + i) == INT_MAX) {
+          cout << '$';
+        } else {
+          cout << *(curr->children[curr->_next_edge]->label + i);
+        }
+      }
+      cout << "\"];" << endl;
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+    } else if (curr->suffix_index != 0){
+      cout << endl;
+      // cout <<
+      //cout << "arrived at leaf: " << curr->suffix_index << endl;
+    } else {
+      cout << "";
+      //cout << "visited all nodes" << endl;
+    }
+    node_s.pop();
+  }
+}
 int main() {
   int sample[] = {3,1,3,1,2,INT_MAX};
   int sample2[] = {2, 1, 2, 3, 4, 3, INT_MAX};
@@ -167,8 +206,11 @@ int main() {
   }
   collectNodes(root);
   cout << endl;
-  visitLeafNodes(root);
+  // visitLeafNodes(root);
+  //contractTrie(root);
+  displayTrie(root);
   deleteCollectedTrie(root);
+  //delete root;
   // insertSuffix(root, sample + 1);
   // insertSuffix(root, sample + 2);
   // insertSuffix(root, sample + 5);
