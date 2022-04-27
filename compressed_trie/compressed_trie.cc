@@ -1,5 +1,6 @@
-
+#include <bits/stdc++.h>
 #define ALPHABET_SIZE 256
+using namespace std;
 
 struct Edge;
 
@@ -108,6 +109,26 @@ void visitLeafNodes(Node* root) {
     node_s.pop();
   }
 }
+
+void deleteCollectedTrie(Node* root) {
+  queue<Node*> node_q;
+  node_q.push(root);
+  Node* curr = nullptr;
+  while (!node_q.empty()) {
+    curr = node_q.front();
+    node_q.pop();
+    if (curr->children.size() == 0) {
+      cout << "deleting leaf node: " << curr->suffix_index << endl;
+      delete curr;
+      continue;
+    }
+    for (int i = 0; i < curr->children.size(); i++) {
+        node_q.push(curr->children[i]->target_node);
+        delete curr->children[i];
+    }
+    delete curr;
+  }
+}
 /*
 void contract(Node* root) {
   stack<Edge*> edge_stack;
@@ -147,6 +168,7 @@ int main() {
   collectNodes(root);
   cout << endl;
   visitLeafNodes(root);
+  deleteCollectedTrie(root);
   // insertSuffix(root, sample + 1);
   // insertSuffix(root, sample + 2);
   // insertSuffix(root, sample + 5);
