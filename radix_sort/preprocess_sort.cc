@@ -32,5 +32,5 @@ int main() {
   for (int i = 0; i < 6; i++) {
     cout << r[i];
   }
-    std::cout << "Hello World!\n";
+    //std::cout << "Hello World!\n";
 }
