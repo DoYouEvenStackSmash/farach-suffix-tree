@@ -111,6 +111,7 @@ void visitLeafNodes(Node* root) {
       cout << "arrived at leaf: " << curr->suffix_index << endl;
     } else {
       cout << "visited all nodes" << endl;
+      curr->_next_edge = 0;
     }
     node_s.pop();
   }
@@ -135,6 +136,7 @@ void deleteCollectedTrie(Node* root) {
     delete curr;
   }
 }
+
 void contractTrie(Node* root) {
   stack<Edge*> edge_s;
   Edge* base = createTrieEdge(root,nullptr);
@@ -158,6 +160,7 @@ void contractTrie(Node* root) {
   }
   delete base;
 }
+
 void displayTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -188,11 +191,13 @@ void displayTrie(Node* root) {
       //cout << "arrived at leaf: " << curr->suffix_index << endl;
     } else {
       cout << "";
+      curr->_next_edge = 0;
       //cout << "visited all nodes" << endl;
     }
     node_s.pop();
   }
 }
+
 int main() {
   int sample[] = {3,1,3,1,2,INT_MAX};
   int sample2[] = {2, 1, 2, 3, 4, 3, INT_MAX};
@@ -206,9 +211,11 @@ int main() {
   }
   collectNodes(root);
   cout << endl;
-  // visitLeafNodes(root);
-  //contractTrie(root);
   displayTrie(root);
+  visitLeafNodes(root);
+  contractTrie(root);
+  displayTrie(root);
+  visitLeafNodes(root);
   deleteCollectedTrie(root);
   //delete root;
   // insertSuffix(root, sample + 1);
