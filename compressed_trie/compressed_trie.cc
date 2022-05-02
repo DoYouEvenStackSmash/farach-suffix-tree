@@ -198,6 +198,45 @@ void displayTrie(Node* root) {
   }
 }
 
+void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
+  int last_peak = -1;
+  bool peak_set = true;
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (curr->_next_edge < curr->children.size()) {
+      if (!peak_set) {
+        last_peak = curr->Lv;
+        peak_set = true;
+      }
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+    } else if (curr->suffix_index != 0){
+      sort_array->push_back(curr->suffix_index);
+      LCP_array->push_back(last_peak);
+      peak_set = false;
+      cout << "arrived at leaf: " << curr->suffix_index << endl;
+    } else {
+      cout << "visited all nodes" << endl;
+      curr->_next_edge = 0;
+    }
+    node_s.pop();
+  }
+}
+
+/*
+void construct_collect_delete_test()
+
+void construct_collect_contract_delete_test()
+
+void construct_collect_contract_arrays_delete_test()
+*/
+
+
 int main() {
   int sample[] = {3,1,3,1,2,INT_MAX};
   int sample2[] = {2, 1, 2, 3, 4, 3, INT_MAX};
@@ -211,11 +250,18 @@ int main() {
   }
   collectNodes(root);
   cout << endl;
-  displayTrie(root);
-  visitLeafNodes(root);
+  //displayTrie(root);
+  //visitLeafNodes(root);
   contractTrie(root);
-  displayTrie(root);
-  visitLeafNodes(root);
+  //displayTrie(root);
+  //visitLeafNodes(root);
+  vector<int> A;
+  vector<int> LCP;
+  buildArrays(root, &A, &LCP);
+  for (auto a: A) {
+    cout << a << " ";
+  }
+  cout << endl;
   deleteCollectedTrie(root);
   //delete root;
   // insertSuffix(root, sample + 1);
