@@ -136,8 +136,8 @@ void deleteCollectedTrie(Node* root) {
       continue;
     }
     for (int i = 0; i < curr->children.size(); i++) {
-        node_q.push(curr->children[i]->target_node);
-        delete curr->children[i];
+      node_q.push(curr->children[i]->target_node);
+      delete curr->children[i];
     }
     delete curr;
   }
@@ -168,27 +168,94 @@ void transformString(vector<int> &t_str, vector<int> &rv) {
     rv.push_back(*a);
 }
 
+void displayTrie(Node* root) {
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (!curr->_color) {
+      cout << "node" << curr << " [label=" << '\"' << curr->Lv << "\"];" << endl;
+      curr->_color = 1;
+    }
+    if (curr->_next_edge < curr->children.size()) {
+      cout << "node" << curr << "->" << "node" << curr->children[curr->_next_edge]->target_node << "[label=\"";
+
+      for (int i = 0; i < curr->children[curr->_next_edge]->label_len; i++) {
+        if (*(curr->children[curr->_next_edge]->label + i) == INT_MAX) {
+          cout << '$';
+        } else {
+          cout << *(curr->children[curr->_next_edge]->label + i);
+        }
+      }
+      cout << "\"];" << endl;
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+    } else if (curr->suffix_index != 0){
+      cout << endl;
+      // cout <<
+      //cout << "arrived at leaf: " << curr->suffix_index << endl;
+    } else {
+      cout << "";
+      curr->_next_edge = 0;
+      //cout << "visited all nodes" << endl;
+    }
+    node_s.pop();
+  }
+}
+
+void contractTrie(Node* root) {
+  stack<Edge*> edge_s;
+  Edge* base = createTrieEdge(root);
+  edge_s.push(base);
+  Node* curr = nullptr;
+
+  while (!edge_s.empty()) {
+    curr = edge_s.top()->target_node;
+
+    if (curr->children.size() == 1) {
+      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
+      edge_s.top()->target_node = curr->children[0]->target_node;
+      delete curr->children[0];
+      delete curr;
+
+    } else if (curr->_next_edge < curr->children.size()) {
+      edge_s.push(curr->children[curr->_next_edge]);
+      curr->_next_edge++;
+      //curr = edge_s
+
+    } else {
+      curr->_next_edge = 0;
+      edge_s.pop();
+    }
+  }
+  delete base;
+}
+
 void input_transform() {
-    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
-    vector<int> rv;
-    transformString(T, rv);
-    for (auto a : rv)
-        cout << a << ",";
+  vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
+  vector<int> rv;
+  transformString(T, rv);
+  for (auto a : rv)
+    cout << a << ",";
 }
 
 void create_tree() {
-    Node* root = createTrieNode(0);
-    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
-    for (int i = 0; i < T.size(); i++) {
-        insertSuffix(root, T.data() + i, i + 1);
-    }
-    collectNodes(root);
-    deleteCollectedTrie(root);
+  Node* root = createTrieNode(0);
+  vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
+  for (int i = 0; i < T.size(); i++) {
+    insertSuffix(root, T.data() + i, i + 1);
+  }
+  collectNodes(root);
+  contractTrie(root);
+  displayTrie(root);
+  deleteCollectedTrie(root);
 
 }
 
 int main() {
-    input_transform();
-    create_tree();
-    return 0;
+  input_transform();
+  create_tree();
+  return 0;
 }
