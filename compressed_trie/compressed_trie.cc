@@ -49,7 +49,27 @@ Node* createTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
   return N;
 }
 
+Edge* createFullTrieEdge(Node* target, int* edge_label = nullptr) {
+  Edge* E = new Edge;
+  E->label = edge_label;
+  //cout << "new Edge: label " << *edge_label << endl;
+  E->label_len = 1; //edge must have a label
+  E->target_node = target;
+  return E;
+}
 
+Node* createFullTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
+  Node* N = new Node;
+  //cout << N << endl;
+  N->Lv = level;
+  // cout << "node" << N << " [label=" << '\"' << N->Lv;
+  if (IS_LEAF_NODE) {
+    N->suffix_index = suffix_index;
+  }
+  N->_color = 0;
+  N->_next_edge = 0;
+  return N;
+}
 void insertSuffix(Node* root, int* suffix_start, int suffix_index = 0) {
 
   Node* curr_node = root;
@@ -236,8 +256,89 @@ void construct_collect_contract_delete_test()
 void construct_collect_contract_arrays_delete_test()
 */
 
+void construct_full_odd_tree(Node* root, vector<int>* LCP_ext, vector<int> *A_ext) {
+  stack<Node*> stk;
+  int curr_depth = 0;
+  Node* curr = root;
+  int LHS = 0;
+  int RHS = 0;
+  stk.push(root);
+  RHS = 1;
+  LHS = RHS - 1;
+  do {
+    while (curr_depth < (*LCP_ext)[LHS]) {
+      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,0));
+      curr->children.push_back(e);
+      stk.push(e->target_node);
+      curr = stk.top();
+      curr_depth++;
+      if (curr_depth == (*LCP_ext)[LHS]) {
+        Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
+        curr->children.push_back(e);
+        LHS++;
+      }
+    }
+    if (curr_depth > (*LCP_ext)[LHS]) {
+      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
+      curr->children.push_back(e);
+    }
+    while (curr_depth > (*LCP_ext)[LHS]) {
+      curr = stk.top();
+      stk.pop();
+      curr_depth--;
+      if (curr_depth == (*LCP_ext)[LHS]) {
+        LHS++;
+        break;
+      }
+    }
+    if (LHS == LCP_ext->size()) {
+      break;
+    } else if (curr_depth == (*LCP_ext)[LHS]) {
+      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
+      curr->children.push_back(e);
+      LHS++;
+    }
+  } while(true);
+  root->children.push_back(createFullTrieEdge(createFullTrieNode(0,(*A_ext)[LHS],true)));
+
+}
+// expand sorted suffix array
+void expand_sorted_suffix_array(vector<int>* A_ext, vector<int>* A) {
+  for (int i = 0; i < A->size(); i++) {
+    A_ext->push_back((2 * (*A)[i]) - 1);
+  }
+}
+// expand and correct longest common prefix array
+void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, vector<int>* S) {
+  int val = 0;
+  //tern = ((*S)[(*A_ext)[i] + 2 * (*LCP)[i]] == (*S)[(*A_ext)[i + 1] + 2 * (*LCP)[i]] ? 1 : 0);
+  for (int i = 0; i < LCP->size(); i++) {
+    val = 2 * (*LCP)[i] + ((*S)[((*A_ext)[i] + 2 * (*LCP)[i]) - 1] == (*S)[((*A_ext)[i + 1] + 2 * (*LCP)[i]) - 1] ? 1 : 0);
+    LCP_ext->push_back(val);
+  }
+}
+void workflow() {
+    //vector<int> a = {1};
+    vector<int> s = {1,2,1,1,1,2,2,1,2,2,2,1,INT_MAX};
+    int S[] = {1,2,1,1,1,2,2,1,2,2,2,1,INT_MAX,INT_MAX};
+    vector<int> a = {2,1,3,4,6,5,7};
+    vector<int> a_ext;
+    vector<int> LCP = {0, 1, 0, 1, 0, 0};
+    vector<int> LCP_ext;
+    expand_sorted_suffix_array(&a_ext, &a);
+    expand_LCP_array(&LCP_ext, &LCP, &a_ext, &s);
+    int k = 0;
+    Node* root = createFullTrieNode(k, 0);
+    construct_full_odd_tree(root, &LCP_ext, &a_ext);//, S);
+    visitLeafNodes(root);
+    //displayTrie(root);
+    deleteCollectedTrie(root);
+    // return 0;
+}
 
 int main() {
+  workflow();
+  return 0;
   int sample[] = {3,1,3,1,2,INT_MAX};
   int sample2[] = {2, 1, 2, 3, 4, 3, INT_MAX};
   // int sample_size = 6;
@@ -258,7 +359,7 @@ int main() {
   vector<int> A;
   vector<int> LCP;
   buildArrays(root, &A, &LCP);
-  for (auto a: A) {
+  for (auto a: LCP) {
     cout << a << " ";
   }
   cout << endl;
