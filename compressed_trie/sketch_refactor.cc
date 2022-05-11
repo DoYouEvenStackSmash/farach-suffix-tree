@@ -144,30 +144,43 @@ void deleteCollectedTrie(Node* root) {
 }
 
 /*
-  transform input string t_str to a ranked string
-  bucket sort using nested maps, keys of length 2
-  iterate over map, assign monotonic increasing int
-  copy into return vector rv
+  Trie simple path contraction.
+  Easier to explain diagramatically.
 */
-void transformString(vector<int> &t_str, vector<int> &rv) {
-  map<int, map<int, int>> bucket_map;
-  vector<int*> rank_vec;
-  int input_str_len = t_str.size();
-  for (int i = 0; i < input_str_len/2; i++) {
-    rank_vec.push_back(&(bucket_map[t_str[(2 * i)]][t_str[(2 * i) + 1]]));
-  }
-  int counter = 1;
-  for (auto a : bucket_map) {
-    for (auto b : a.second) {
-      bucket_map[a.first][b.first] = counter;
-      counter++;
+void contractTrie(Node* root) {
+  stack<Edge*> edge_s;
+  Edge* base = createTrieEdge(root);
+  edge_s.push(base);
+  Node* curr = nullptr;
+
+  while (!edge_s.empty()) {
+    curr = edge_s.top()->target_node;
+
+    if (curr->children.size() == 1) {
+      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
+      edge_s.top()->target_node = curr->children[0]->target_node;
+      delete curr->children[0];
+      delete curr;
+
+    } else if (curr->_next_edge < curr->children.size()) {
+      edge_s.push(curr->children[curr->_next_edge]);
+      curr->_next_edge++;
+
+    } else {
+      curr->_next_edge = 0;
+      edge_s.pop();
     }
   }
-
-  for (auto a : rank_vec)
-    rv.push_back(*a);
+  delete base;
 }
 
+/*
+  Traverses the Trie in DFS manner, printing in dot format
+  Edge labels are printed on respective edges
+  Node level, (leaf level if contracted) is printed inside the node
+
+  Derivative of the visit leaf depth first traversal
+*/
 void displayTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -194,43 +207,39 @@ void displayTrie(Node* root) {
       continue;
     } else if (curr->suffix_index != 0){
       cout << endl;
-      // cout <<
-      //cout << "arrived at leaf: " << curr->suffix_index << endl;
+
     } else {
       cout << "";
       curr->_next_edge = 0;
-      //cout << "visited all nodes" << endl;
+
     }
     node_s.pop();
   }
 }
 
-void contractTrie(Node* root) {
-  stack<Edge*> edge_s;
-  Edge* base = createTrieEdge(root);
-  edge_s.push(base);
-  Node* curr = nullptr;
-
-  while (!edge_s.empty()) {
-    curr = edge_s.top()->target_node;
-
-    if (curr->children.size() == 1) {
-      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
-      edge_s.top()->target_node = curr->children[0]->target_node;
-      delete curr->children[0];
-      delete curr;
-
-    } else if (curr->_next_edge < curr->children.size()) {
-      edge_s.push(curr->children[curr->_next_edge]);
-      curr->_next_edge++;
-      //curr = edge_s
-
-    } else {
-      curr->_next_edge = 0;
-      edge_s.pop();
+/*
+  transform input string t_str to a ranked string
+  bucket sort using nested maps, keys of length 2
+  iterate over map, assign monotonic increasing int
+  copy into return vector rv
+*/
+void transformString(vector<int> &t_str, vector<int> &rv) {
+  map<int, map<int, int>> bucket_map;
+  vector<int*> rank_vec;
+  int input_str_len = t_str.size();
+  for (int i = 0; i < input_str_len/2; i++) {
+    rank_vec.push_back(&(bucket_map[t_str[(2 * i)]][t_str[(2 * i) + 1]]));
+  }
+  int counter = 1;
+  for (auto a : bucket_map) {
+    for (auto b : a.second) {
+      bucket_map[a.first][b.first] = counter;
+      counter++;
     }
   }
-  delete base;
+
+  for (auto a : rank_vec)
+    rv.push_back(*a);
 }
 
 void input_transform() {
