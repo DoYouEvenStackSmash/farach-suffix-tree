@@ -250,7 +250,18 @@ void input_transform() {
     cout << a << ",";
 }
 
-void create_tree() {
+void create_trie() {
+  Node* root = createTrieNode(0);
+  vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
+  for (int i = 0; i < T.size(); i++) {
+    insertSuffix(root, T.data() + i, i + 1);
+  }
+  collectNodes(root);
+  displayTrie(root);
+  deleteCollectedTrie(root);
+}
+
+void create_compressed_trie() {
   Node* root = createTrieNode(0);
   vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
   for (int i = 0; i < T.size(); i++) {
@@ -260,11 +271,11 @@ void create_tree() {
   contractTrie(root);
   displayTrie(root);
   deleteCollectedTrie(root);
-
 }
 
 int main() {
   input_transform();
-  create_tree();
+  create_trie();
+  create_compressed_trie();
   return 0;
 }
