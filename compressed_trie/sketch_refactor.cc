@@ -33,6 +33,14 @@ struct Edge {
   Node* target_node;
 };
 
+struct S {
+  Node* root;
+  vector<int> input_string;
+  vector<int> rank_string;
+  vector<int> LCP_ext;
+  vector<int> A_ext;
+};
+
 /*
   Creates an Edge pointing to a Node
   if Edge has edge_label != nullptr, label_len > 0
@@ -302,13 +310,23 @@ void transformString(vector<int> &t_str, vector<int> &rv) {
     rv.push_back(*a);
 }
 
+
 void input_transform() {
-  vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
+  S singleton;
+  singleton.input_string = {1,2,1,1,1,2,2,1,2,2,2,1,END};
   vector<int> rv;
-  transformString(T, rv);
-  for (auto a : rv)
+  transformString(singleton.input_string, singleton.rank_string);
+  for (auto a : singleton.rank_string)
     cout << a << ",";
 }
+
+// void input_transform() {
+//   vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,END};
+//   vector<int> rv;
+//   transformString(T, rv);
+//   for (auto a : rv)
+//     cout << a << ",";
+// }
 
 void create_trie() {
   Node* root = createTrieNode(0);
@@ -335,7 +353,7 @@ void create_compressed_trie() {
 
 int main() {
   input_transform();
-  create_trie();
-  create_compressed_trie();
+  // create_trie();
+  // create_compressed_trie();
   return 0;
 }
