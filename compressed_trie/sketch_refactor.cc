@@ -175,6 +175,66 @@ void contractTrie(Node* root) {
 }
 
 /*
+  Traverses the Trie in DFS manner
+  builds sort_array containing suffix positions in lexicographic order
+  builds LCP array, least common ancestor of adjacent strings in sort_array
+
+  Derivative of the visit leaf depth first traversal
+*/
+
+void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
+  int last_peak = -1;
+  bool peak_set = true;
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (curr->_next_edge < curr->children.size()) {
+      if (!peak_set) {
+        //save highest point
+        last_peak = curr->Lv;
+        peak_set = true;
+      }
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+
+    } else if (curr->suffix_index != 0){
+      sort_array->push_back(curr->suffix_index);
+      LCP_array->push_back(last_peak);
+      peak_set = false;
+
+    } else {
+      curr->_next_edge = 0;
+    }
+    node_s.pop();
+  }
+}
+
+/*
+  expand lexicographically ordered suffix array
+*/
+void expand_sorted_suffix_array(vector<int>* A_ext, vector<int>* A) {
+  for (int i = 0; i < A->size(); i++) {
+    A_ext->push_back((2 * (*A)[i]) - 1);
+  }
+}
+
+/*
+  expand and correct longest common prefix array
+  NOTE: Because buildArrays has a dummy element in LCP, we must skip it
+*/
+void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, vector<int>* S) {
+  int FIRST_ELEMENT = 1;
+  int val = 0;
+  for (int i = FIRST_ELEMENT; i < LCP->size(); i++) {
+    val = 2 * (*LCP)[i] + ((*S)[((*A_ext)[i] + 2 * (*LCP)[i]) - 1] == (*S)[((*A_ext)[i + 1] + 2 * (*LCP)[i]) - 1] ? 1 : 0);
+    LCP_ext->push_back(val);
+  }
+}
+/*
   Traverses the Trie in DFS manner, printing in dot format
   Edge labels are printed on respective edges
   Node level, (leaf level if contracted) is printed inside the node
