@@ -404,6 +404,7 @@ void create_compressed_trie() {
   vector<int> c_LCP;
   vector<int> c_A;
   buildArrays(root, &c_A, &c_LCP);
+  displayTrie(root);
   deleteCollectedTrie(root);
 
   expand_sorted_suffix_array(&s.A_ext, &c_A);
@@ -413,7 +414,7 @@ void create_compressed_trie() {
   s.root = createTrieNode(0, true);
 
   constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
-  displayTrie(s.root);
+  //displayTrie(s.root);
 
   deleteCollectedTrie(s.root);
 }
