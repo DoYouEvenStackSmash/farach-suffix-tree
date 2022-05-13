@@ -2,98 +2,108 @@
 using namespace std;
 
 #define ALPHABET_SIZE 256
-
+#define TERM INT_MAX
 struct Edge;
 
+/*
+  Lv            | depth of Node in Tree
+  edge_table    | array used for constant time lookup during pre contract ops
+  children      | vector containing all child edges of Node
+  suffix_index  | identifier for leaf, 0 for internal
+  _color        | internal use during contract
+  _next_edge    | internal use during traversal ops
+*/
 struct Node {
   int Lv;
   Edge** edge_table = nullptr;
   vector <Edge*> children;
-  int suffix_index = 0;
+  int suffix_index;
   int _color;
   int _next_edge;
 };
 
+/*
+  label       | edge label start address
+  label_len   | size of edge label
+  target_node | target of directed edge
+*/
 struct Edge {
   int* label;
   int label_len;
   Node* target_node;
 };
 
-Edge* createTrieEdge(Node* target, int* edge_label) {
+struct S{
+  Node* root;
+  vector<int> input_string;
+  vector<int> rank_string;
+  vector<int> LCP_ext;
+  vector<int> A_ext;
+};
+
+/*
+  Creates an Edge pointing to a Node
+  if Edge has edge_label != nullptr, label_len > 0
+*/
+Edge* createTrieEdge(Node* target, int* edge_label = nullptr, int label_len = 0) {
   Edge* E = new Edge;
-  E->label = edge_label;
-  //cout << "new Edge: label " << *edge_label << endl;
-  E->label_len = 1; //edge must have a label
+
   E->target_node = target;
+  E->label = edge_label;
+  E->label_len = label_len;
+
   return E;
 }
-
-Node* createTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
-
+/*
+  Creates a Node
+*/
+Node* createTrieNode(int level, bool IS_LEAF_NODE = false, int suffix_index = 0) {
   Node* N = new Node;
-  //cout << N << endl;
+
   N->Lv = level;
-  // cout << "node" << N << " [label=" << '\"' << N->Lv;
-  if (!IS_LEAF_NODE) {
+  N->_color = 0;
+  N->_next_edge = 0;
+
+  if (!IS_LEAF_NODE)
     N->edge_table = new Edge*[ALPHABET_SIZE]();
-    // cout << "\"];" << endl;
-    //cout << "new Node: level " << level << endl;
-  } else {
-    //cout << "new Leaf: level " << level << endl;
-    // cout << "$\"];" << endl;
-    N->suffix_index = suffix_index;
-  }
-  N->_color = 0;
-  N->_next_edge = 0;
+
+  N->suffix_index = suffix_index;
+
   return N;
 }
 
-Edge* createFullTrieEdge(Node* target, int* edge_label = nullptr) {
-  Edge* E = new Edge;
-  E->label = edge_label;
-  //cout << "new Edge: label " << *edge_label << endl;
-  E->label_len = 1; //edge must have a label
-  E->target_node = target;
-  return E;
-}
-
-Node* createFullTrieNode(int level, int suffix_index, bool IS_LEAF_NODE = false) {
-  Node* N = new Node;
-  //cout << N << endl;
-  N->Lv = level;
-  // cout << "node" << N << " [label=" << '\"' << N->Lv;
-  if (IS_LEAF_NODE) {
-    N->suffix_index = suffix_index;
-  }
-  N->_color = 0;
-  N->_next_edge = 0;
-  return N;
-}
-void insertSuffix(Node* root, int* suffix_start, int suffix_index = 0) {
-
+/*
+  inserts a substring, id = suffix_index
+*/
+void insertSuffix(Node* root, int* start, int suffix_index) {
   Node* curr_node = root;
-  int* curr_char = suffix_start;
-  int lv = 0;
+  int* curr_char = start;
+  int lv = 1;
 
-  while (*curr_char != INT_MAX) {
-    lv++;
-
+  while (*curr_char != TERM) {
+    // curr_node cannot be a leaf node, therefore must have edge_table
     if (!curr_node->edge_table[*curr_char]) {
-      curr_node->edge_table[*curr_char] = createTrieEdge(createTrieNode(lv, 0 ,false), curr_char);
+      curr_node->edge_table[*curr_char] = createTrieEdge(createTrieNode(lv), curr_char, 1);
     }
-
     curr_node = curr_node->edge_table[*curr_char]->target_node;
     curr_char++;
+    lv++;
   }
 
-  if (*curr_char == INT_MAX) {
-    if (!curr_node->edge_table[ALPHABET_SIZE - 1]) {
-      curr_node->edge_table[ALPHABET_SIZE - 1] = createTrieEdge(createTrieNode(lv + 1, suffix_index ,true), curr_char);
-    }
+  if (*curr_char != TERM) {
+    cout << "somehow not end, but end" << endl;
+  } else if (curr_node->edge_table[ALPHABET_SIZE - 1]) {
+    cout << "somehow inserted a duplicate suffix?" << endl;
+  } else {
+    curr_node->edge_table[ALPHABET_SIZE - 1] = createTrieEdge(createTrieNode(lv, true, suffix_index), curr_char, 1);
   }
 }
 
+/*
+  consolidates the edges of each node in BFS manner
+  moves Edges from Node.edge_table to Node.children
+  deletes edge_table
+*/
 void collectNodes(Node* root) {
   queue<Node*> node_q;
   node_q.push(root);
@@ -112,31 +122,15 @@ void collectNodes(Node* root) {
         node_q.push(curr->edge_table[i]->target_node);
       }
     }
-    // sort(curr->children.begin(), curr->children.end(), compareEdge);
     delete[] curr->edge_table;
   }
 }
 
-void visitLeafNodes(Node* root) {
-  stack<Node*> node_s;
-  node_s.push(root);
-  Node* curr = nullptr;
-  while (!node_s.empty()) {
-    curr = node_s.top();
-    if (curr->_next_edge < curr->children.size()) {
-      node_s.push(curr->children[curr->_next_edge]->target_node);
-      curr->_next_edge++;
-      continue;
-    } else if (curr->suffix_index != 0){
-      cout << "arrived at leaf: " << curr->suffix_index << endl;
-    } else {
-      cout << "visited all nodes" << endl;
-      curr->_next_edge = 0;
-    }
-    node_s.pop();
-  }
-}
-
+/*
+  deletes entire trie, in BFS manner
+  NOTE: Trie must be collected FIRST, because this function iterates
+    over Node.children edge objects.
+*/
 void deleteCollectedTrie(Node* root) {
   queue<Node*> node_q;
   node_q.push(root);
@@ -157,30 +151,31 @@ void deleteCollectedTrie(Node* root) {
   }
 }
 
-void contractTrie(Node* root) {
-  stack<Edge*> edge_s;
-  Edge* base = createTrieEdge(root,nullptr);
-  edge_s.push(base);
-  Node* curr = nullptr;
-  while (!edge_s.empty()) {
-    curr = edge_s.top()->target_node;
-    if (curr->children.size() == 1) {
-      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
-      edge_s.top()->target_node = curr->children[0]->target_node;
-      delete curr->children[0];
-      delete curr;
-    } else if (curr->_next_edge < curr->children.size()) {
-      edge_s.push(curr->children[curr->_next_edge]);
-      curr->_next_edge++;
-      //curr = edge_s
-    } else {
-      curr->_next_edge = 0;
-      edge_s.pop();
+/*
+  transform input string t_str to a ranked string
+  bucket sort using nested maps, keys of length 2
+  iterate over map, assign monotonic increasing int
+  Eliminates duplicates: otherwise the counter becomes much larger than the string
+  copy into return vector rv
+*/
+void transformString(vector<int> &t_str, vector<int> &rv) {
+  map<int, map<int, int>> bucket_map;
+  vector<int*> rank_vec;
+  int input_str_len = t_str.size();
+  for (int i = 0; i < input_str_len/2; i++) {
+    rank_vec.push_back(&(bucket_map[t_str[(2 * i)]][t_str[(2 * i) + 1]]));
+  }
+  int counter = 1;
+  for (auto a : bucket_map) {
+    for (auto b : a.second) {
+      bucket_map[a.first][b.first] = counter;
+      counter++;
     }
   }
-  delete base;
-}
 
+  for (auto a : rank_vec)
+    rv.push_back(*a);
+}
 void displayTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -218,6 +213,42 @@ void displayTrie(Node* root) {
   }
 }
 
+void contractTrie(Node* root) {
+  stack<Edge*> edge_s;
+  Edge* base = createTrieEdge(root);
+  edge_s.push(base);
+  Node* curr = nullptr;
+
+  while (!edge_s.empty()) {
+    curr = edge_s.top()->target_node;
+
+    if (curr->children.size() == 1) {
+      edge_s.top()->label_len = edge_s.top()->label_len + curr->children[0]->label_len;
+      edge_s.top()->target_node = curr->children[0]->target_node;
+      delete curr->children[0];
+      delete curr;
+
+    } else if (curr->_next_edge < curr->children.size()) {
+      edge_s.push(curr->children[curr->_next_edge]);
+      curr->_next_edge++;
+      //curr = edge_s
+
+    } else {
+      curr->_next_edge = 0;
+      edge_s.pop();
+    }
+  }
+  delete base;
+}
+
+/*
+  Traverses the Trie in DFS manner
+  builds sort_array containing suffix positions in lexicographic order
+  builds LCP array, least common ancestor of adjacent strings in sort_array
+
+  Derivative of the visit leaf depth first traversal
+*/
+
 void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
   int last_peak = -1;
   bool peak_set = true;
@@ -229,19 +260,21 @@ void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
     curr = node_s.top();
     if (curr->_next_edge < curr->children.size()) {
       if (!peak_set) {
+        //save highest point
         last_peak = curr->Lv;
         peak_set = true;
       }
       node_s.push(curr->children[curr->_next_edge]->target_node);
       curr->_next_edge++;
       continue;
+
     } else if (curr->suffix_index != 0){
+      //making sure LCP.size() == sort_array.size() - 1
+      if (last_peak != -1)
+        LCP_array->push_back(last_peak);
       sort_array->push_back(curr->suffix_index);
-      LCP_array->push_back(last_peak);
       peak_set = false;
-      cout << "arrived at leaf: " << curr->suffix_index << endl;
     } else {
-      cout << "visited all nodes" << endl;
       curr->_next_edge = 0;
     }
     node_s.pop();
@@ -249,128 +282,145 @@ void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
 }
 
 /*
-void construct_collect_delete_test()
-
-void construct_collect_contract_delete_test()
-
-void construct_collect_contract_arrays_delete_test()
+  expand lexicographically ordered suffix array
 */
-
-void construct_full_odd_tree(Node* root, vector<int>* LCP_ext, vector<int> *A_ext) {
-  stack<Node*> stk;
-  int curr_depth = 0;
-  Node* curr = root;
-  int LHS = 0;
-  int RHS = 0;
-  stk.push(root);
-  RHS = 1;
-  LHS = RHS - 1;
-  do {
-    while (curr_depth < (*LCP_ext)[LHS]) {
-      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,0));
-      curr->children.push_back(e);
-      stk.push(e->target_node);
-      curr = stk.top();
-      curr_depth++;
-      if (curr_depth == (*LCP_ext)[LHS]) {
-        Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
-        curr->children.push_back(e);
-        LHS++;
-      }
-    }
-    if (curr_depth > (*LCP_ext)[LHS]) {
-      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
-      curr->children.push_back(e);
-    }
-    while (curr_depth > (*LCP_ext)[LHS]) {
-      curr = stk.top();
-      stk.pop();
-      curr_depth--;
-      if (curr_depth == (*LCP_ext)[LHS]) {
-        LHS++;
-        break;
-      }
-    }
-    if (LHS == LCP_ext->size()) {
-      break;
-    } else if (curr_depth == (*LCP_ext)[LHS]) {
-      Edge* e = createFullTrieEdge(createFullTrieNode(curr_depth,(*A_ext)[LHS],true));
-      curr->children.push_back(e);
-      LHS++;
-    }
-  } while(true);
-  root->children.push_back(createFullTrieEdge(createFullTrieNode(0,(*A_ext)[LHS],true)));
-
-}
-// expand sorted suffix array
 void expand_sorted_suffix_array(vector<int>* A_ext, vector<int>* A) {
   for (int i = 0; i < A->size(); i++) {
     A_ext->push_back((2 * (*A)[i]) - 1);
   }
 }
-// expand and correct longest common prefix array
-void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, vector<int>* S) {
+
+/*
+  expand and correct longest common prefix array
+  NOTE: Because buildArrays has a dummy element in LCP, we must skip it
+*/
+void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, int* S) {
   int val = 0;
-  //tern = ((*S)[(*A_ext)[i] + 2 * (*LCP)[i]] == (*S)[(*A_ext)[i + 1] + 2 * (*LCP)[i]] ? 1 : 0);
   for (int i = 0; i < LCP->size(); i++) {
-    val = 2 * (*LCP)[i] + ((*S)[((*A_ext)[i] + 2 * (*LCP)[i]) - 1] == (*S)[((*A_ext)[i + 1] + 2 * (*LCP)[i]) - 1] ? 1 : 0);
+    val = 2 * (*LCP)[i] + (S[((*A_ext)[i] + 2 * (*LCP)[i]) - 1] == S[((*A_ext)[i + 1] + 2 * (*LCP)[i]) - 1] ? 1 : 0);
     LCP_ext->push_back(val);
   }
 }
-void workflow() {
-    //vector<int> a = {1};
-    vector<int> s = {1,2,1,1,1,2,2,1,2,2,2,1,INT_MAX};
-    int S[] = {1,2,1,1,1,2,2,1,2,2,2,1,INT_MAX,INT_MAX};
-    vector<int> a = {2,1,3,4,6,5,7};
-    vector<int> a_ext;
-    vector<int> LCP = {0, 1, 0, 1, 0, 0};
-    vector<int> LCP_ext;
-    expand_sorted_suffix_array(&a_ext, &a);
-    expand_LCP_array(&LCP_ext, &LCP, &a_ext, &s);
-    int k = 0;
-    Node* root = createFullTrieNode(k, 0);
-    construct_full_odd_tree(root, &LCP_ext, &a_ext);//, S);
-    visitLeafNodes(root);
-    //displayTrie(root);
+
+/*
+  construct NEW full odd trie using LCP and sorted array
+*/
+
+void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S) {
+  Node* curr_node = nullptr;
+  int curr_depth = 0;
+  int LHS = 0;
+  int END = A[A.size() - 1];
+
+  stack<Node*> node_stack;
+  node_stack.push(root);
+  curr_node = node_stack.top();
+
+  while (LHS < LCP.size()) {
+    while (curr_depth < LCP[LHS]) {
+      //create node as leaf to avoid edge_table leaks
+      Edge* e = createTrieEdge(createTrieNode(curr_depth + 1, true),
+                              S + (A[LHS] - 1 + curr_depth),
+                              1);
+      curr_node->children.push_back(e);
+      node_stack.push(e->target_node);
+      curr_node = node_stack.top();
+      curr_depth++;
+    }
+    if (curr_depth == LCP[LHS]) {
+      Edge* e = createTrieEdge(createTrieNode(curr_depth + 1, true, A[LHS]),
+                              S + (A[LHS] - 1 + curr_depth),
+                              END - (A[LHS] - 1 + curr_depth));
+      curr_node->children.push_back(e);
+      LHS++;
+    }
+    if (LHS == LCP.size()) {
+      break;
+    }
+    if (curr_depth > LCP[LHS]) {
+      Edge* e = createTrieEdge(createTrieNode(curr_depth + 1, true, A[LHS]),
+                              S + (A[LHS] - 1 + curr_depth),
+                              END - (A[LHS] - 1 + curr_depth));
+      curr_node->children.push_back(e);
+    }
+    while (curr_depth > LCP[LHS]) {
+      node_stack.pop();
+      curr_node = node_stack.top();
+
+      curr_depth--;
+      if (curr_depth == LCP[LHS]) {
+        LHS++;
+        break;
+      }
+    }
+  }
+  Edge* e = createTrieEdge(createTrieNode(curr_depth + 1, true, A[LHS]),
+                          S + (A[LHS] - 1 + curr_depth),
+                          END - (A[LHS] - 1 + curr_depth));
+  curr_node->children.push_back(e);
+}
+
+void input_transform() {
+    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
+    vector<int> rv;
+    transformString(T, rv);
+    for (auto a : rv)
+        cout << a << ",";
+}
+
+void create_tree() {
+    Node* root = createTrieNode(0);
+    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
+    for (int i = 0; i < T.size(); i++) {
+        insertSuffix(root, T.data() + i, i + 1);
+    }
+    collectNodes(root);
+    contractTrie(root);
+    displayTrie(root);
     deleteCollectedTrie(root);
-    // return 0;
+
+}
+
+/*
+  full serial pipeline for odd tree
+*/
+void create_compressed_trie() {
+  S s;
+
+  Node* root = createTrieNode(0);
+
+  s.input_string = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
+
+  transformString(s.input_string, s.rank_string);
+  s.rank_string.push_back(TERM);
+
+  for (int i = 0; i < s.rank_string.size(); i++) {
+    insertSuffix(root, s.rank_string.data() + i, i + 1);
+  }
+
+  collectNodes(root);
+  contractTrie(root);
+
+  vector<int> c_LCP;
+  vector<int> c_A;
+  buildArrays(root, &c_A, &c_LCP);
+  deleteCollectedTrie(root);
+
+  expand_sorted_suffix_array(&s.A_ext, &c_A);
+  expand_LCP_array(&s.LCP_ext, &c_LCP, &s.A_ext, s.input_string.data());
+
+  //create node as leaf to avoid edge_table leaks
+  s.root = createTrieNode(0, true);
+
+  constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
+  displayTrie(s.root);
+
+  deleteCollectedTrie(s.root);
 }
 
 int main() {
-  workflow();
-  return 0;
-  int sample[] = {3,1,3,1,2,INT_MAX};
-  int sample2[] = {2, 1, 2, 3, 4, 3, INT_MAX};
-  // int sample_size = 6;
-  int sample_size = 7;
-  //char sample[] = {'2', '1', '2', '3', '4', '3', '$', '\0'};
-  int k = 0;
-  Node* root = createTrieNode(k, 0);
-  for (int i = 0; i < sample_size; i++) {
-    insertSuffix(root, sample2 + i, i + 1);
-  }
-  collectNodes(root);
-  cout << endl;
-  //displayTrie(root);
-  //visitLeafNodes(root);
-  contractTrie(root);
-  //displayTrie(root);
-  //visitLeafNodes(root);
-  vector<int> A;
-  vector<int> LCP;
-  buildArrays(root, &A, &LCP);
-  for (auto a: LCP) {
-    cout << a << " ";
-  }
-  cout << endl;
-  deleteCollectedTrie(root);
-  //delete root;
-  // insertSuffix(root, sample + 1);
-  // insertSuffix(root, sample + 2);
-  // insertSuffix(root, sample + 5);
-  //contract(root);
-  // for (int i = 0; i < root->children.size(); i++) {
-  //   cout << root->children[i]->label_len << '\t' << root->children[i]->target->L << endl;
-  // }
-  return 0;
+    // input_transform();
+    // create_tree();
+    create_compressed_trie();
+    return 0;
 }
