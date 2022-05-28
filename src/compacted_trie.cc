@@ -1,76 +1,9 @@
 #include <bits/stdc++.h>
+
+#include "basic_blocks.h"
+#include "compacted_trie.h"
+
 using namespace std;
-
-#define ALPHABET_SIZE 256
-#define TERM INT_MAX
-struct Edge;
-
-/*
-  Lv            | depth of Node in Tree
-  edge_table    | array used for constant time lookup during pre contract ops
-  children      | vector containing all child edges of Node
-  suffix_index  | identifier for leaf, 0 for internal
-  _color        | internal use during contract
-  _next_edge    | internal use during traversal ops
-*/
-struct Node {
-  int Lv;
-  Edge** edge_table = nullptr;
-  vector <Edge*> children;
-  int suffix_index;
-  int _color;
-  int _next_edge;
-};
-
-/*
-  label       | edge label start address
-  label_len   | size of edge label
-  target_node | target of directed edge
-*/
-struct Edge {
-  int* label;
-  int label_len;
-  Node* target_node;
-};
-
-struct S{
-  Node* root;
-  vector<int> input_string;
-  vector<int> rank_string;
-  vector<int> LCP_ext;
-  vector<int> A_ext;
-};
-
-/*
-  Creates an Edge pointing to a Node
-  if Edge has edge_label != nullptr, label_len > 0
-*/
-Edge* createTrieEdge(Node* target, int* edge_label = nullptr, int label_len = 0) {
-  Edge* E = new Edge;
-
-  E->target_node = target;
-  E->label = edge_label;
-  E->label_len = label_len;
-
-  return E;
-}
-/*
-  Creates a Node
-*/
-Node* createTrieNode(int level, bool IS_LEAF_NODE = false, int suffix_index = 0) {
-  Node* N = new Node;
-
-  N->Lv = level;
-  N->_color = 0;
-  N->_next_edge = 0;
-
-  if (!IS_LEAF_NODE)
-    N->edge_table = new Edge*[ALPHABET_SIZE]();
-
-  N->suffix_index = suffix_index;
-
-  return N;
-}
 
 /*
   inserts a substring, id = suffix_index
@@ -176,6 +109,7 @@ void transformString(vector<int> &t_str, vector<int> &rv) {
   for (auto a : rank_vec)
     rv.push_back(*a);
 }
+
 void displayTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -213,6 +147,11 @@ void displayTrie(Node* root) {
   }
 }
 
+/*
+  replace simple path p = {u, ..., p} with a single edge(u,v)
+  maximal branch-free paths are replaced by edges labeled
+    by the appropriate substring
+*/
 void contractTrie(Node* root) {
   stack<Edge*> edge_s;
   Edge* base = createTrieEdge(root);
@@ -231,7 +170,6 @@ void contractTrie(Node* root) {
     } else if (curr->_next_edge < curr->children.size()) {
       edge_s.push(curr->children[curr->_next_edge]);
       curr->_next_edge++;
-      //curr = edge_s
 
     } else {
       curr->_next_edge = 0;
@@ -248,7 +186,6 @@ void contractTrie(Node* root) {
 
   Derivative of the visit leaf depth first traversal
 */
-
 void buildArrays(Node* root, vector<int> *sort_array, vector<int> *LCP_array){
   int last_peak = -1;
   bool peak_set = true;
@@ -292,7 +229,6 @@ void expand_sorted_suffix_array(vector<int>* A_ext, vector<int>* A) {
 
 /*
   expand and correct longest common prefix array
-  NOTE: Because buildArrays has a dummy element in LCP, we must skip it
 */
 void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, int* S) {
   int val = 0;
@@ -360,67 +296,37 @@ void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S) 
   curr_node->children.push_back(e);
 }
 
-void input_transform() {
-    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
-    vector<int> rv;
-    transformString(T, rv);
-    for (auto a : rv)
-        cout << a << ",";
-}
 
-void create_tree() {
-    Node* root = createTrieNode(0);
-    vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
-    for (int i = 0; i < T.size(); i++) {
-        insertSuffix(root, T.data() + i, i + 1);
+void eulerTour(Node* root, int suffix_count) {
+  vector<Node*> ET;
+  vector<int> L;
+  vector<int> R(suffix_count, -1);
+
+  Node* curr = nullptr;
+  stack<Node*> node_s;
+  node_s.push(root);
+
+  while(!node_s.empty()) {
+    curr = node_s.top();
+
+    ET.push_back(curr);
+    L.push_back(curr->Lv);
+
+    if (curr->_next_edge < curr->children.size()) {
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+    } else {
+      if (curr->suffix_index)
+        R[curr->suffix_index] = ET.size() - 1;
+
+      curr->_next_edge = 0;
+      node_s.pop();
     }
-    collectNodes(root);
-    contractTrie(root);
-    displayTrie(root);
-    deleteCollectedTrie(root);
-
-}
-
-/*
-  full serial pipeline for odd tree
-*/
-void create_compressed_trie() {
-  S s;
-
-  Node* root = createTrieNode(0);
-
-  s.input_string = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
-
-  transformString(s.input_string, s.rank_string);
-  s.rank_string.push_back(TERM);
-
-  for (int i = 0; i < s.rank_string.size(); i++) {
-    insertSuffix(root, s.rank_string.data() + i, i + 1);
   }
 
-  collectNodes(root);
-  contractTrie(root);
+  cout << "number of visited nodes: " << ET.size() << endl;
 
-  vector<int> c_LCP;
-  vector<int> c_A;
-  buildArrays(root, &c_A, &c_LCP);
-  deleteCollectedTrie(root);
-
-  expand_sorted_suffix_array(&s.A_ext, &c_A);
-  expand_LCP_array(&s.LCP_ext, &c_LCP, &s.A_ext, s.input_string.data());
-
-  //create node as leaf to avoid edge_table leaks
-  s.root = createTrieNode(0, true);
-
-  constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
-  displayTrie(s.root);
-
-  deleteCollectedTrie(s.root);
-}
-
-int main() {
-    // input_transform();
-    // create_tree();
-    create_compressed_trie();
-    return 0;
+  for(auto a : L) {
+    cout << "level: " << a << endl;
+  }
 }
