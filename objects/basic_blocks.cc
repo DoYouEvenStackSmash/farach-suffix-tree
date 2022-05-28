@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include "basic_blocks.h"
 
 using namespace std;
@@ -6,7 +7,7 @@ using namespace std;
   Creates an Edge pointing to a Node
   if Edge has edge_label != nullptr, label_len > 0
 */
-Edge* createTrieEdge(Node* target, int* edge_label = nullptr, int label_len = 0) {
+Edge* createTrieEdge(Node* target, int* edge_label, int label_len) {
   Edge* E = new Edge;
 
   E->target_node = target;
@@ -19,7 +20,7 @@ Edge* createTrieEdge(Node* target, int* edge_label = nullptr, int label_len = 0)
 /*
   Creates a Node
 */
-Node* createTrieNode(int level, bool IS_LEAF_NODE = false, int suffix_index = 0) {
+Node* createTrieNode(int level, bool IS_LEAF_NODE, int suffix_index) {
   Node* N = new Node;
 
   N->Lv = level;

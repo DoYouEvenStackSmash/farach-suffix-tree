@@ -1,5 +1,6 @@
 #ifndef COMPACTED_TRIE_H
 #define COMPACTED_TRIE_H
+constexpr size_t TERM = INT_MAX;
 #include "basic_blocks.h"
 
 using namespace std;

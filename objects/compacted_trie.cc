@@ -1,3 +1,5 @@
+#include <bits/stdc++.h>
+
 #include "basic_blocks.h"
 #include "compacted_trie.h"
 
