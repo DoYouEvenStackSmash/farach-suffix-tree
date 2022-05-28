@@ -360,6 +360,41 @@ void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S) 
   curr_node->children.push_back(e);
 }
 
+void euler_tour(Node* root, int suffix_count) {
+  vector<Node*> ET;
+  vector<int> L;
+  vector<int> R(suffix_count, -1);
+
+  Node* curr = nullptr;
+  stack<Node*> node_s;
+  node_s.push(root);
+
+  while(!node_s.empty()) {
+    curr = node_s.top();
+
+    ET.push_back(curr);
+    L.push_back(curr->Lv);
+
+    if (curr->_next_edge < curr->children.size()) {
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+    } else {
+      if (curr->suffix_index)
+        R[curr->suffix_index] = ET.size() - 1;
+
+      curr->_next_edge = 0;
+      node_s.pop();
+    }
+  }
+
+  cout << "number of visited nodes: " << ET.size() << endl;
+
+  for(auto a : L) {
+    cout << "level: " << a << endl;
+  }
+}
+
+
 void input_transform() {
     vector<int> T = {1,2,1,1,1,2,2,1,2,2,2,1,TERM};
     vector<int> rv;
@@ -384,6 +419,9 @@ void create_tree() {
 /*
   full serial pipeline for odd tree
 */
+
+
+
 void create_compressed_trie() {
   S s;
 
@@ -413,7 +451,11 @@ void create_compressed_trie() {
   s.root = createTrieNode(0, true);
 
   constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
-  displayTrie(s.root);
+  int last_suffix = s.A_ext[s.A_ext.size() - 1] + 1;
+  cout << "last_suffix: "<< last_suffix << endl;
+
+  euler_tour(s.root, last_suffix);
+  //displayTrie(s.root);
 
   deleteCollectedTrie(s.root);
 }
