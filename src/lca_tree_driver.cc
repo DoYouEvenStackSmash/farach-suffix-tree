@@ -3,41 +3,112 @@
 #include "compacted_trie.h"
 using namespace std;
 
-void even_sort(int* input_string, vector<int> A_ext, vector<int> &rv) {
-  map<int, vector<int>> m;
-  for(int i = 0; i < A_ext.size(); i++) {
-    if (A_ext[i] - 2 < 0)
-      continue;
-    m[input_string[A_ext[i] - 2]].push_back(A_ext[i]);
-  }
+// void even_sort(int* input_string, vector<int> A_ext, vector<int> &rv) {
+//   map<int, vector<int>> m;
+//   for(int i = 0; i < A_ext.size(); i++) {
+//     if (A_ext[i] - 2 < 0)
+//       continue;
+//     m[input_string[A_ext[i] - 2]].push_back(A_ext[i]);
+//   }
+//
+//   for (auto a : m) {
+//     for (auto b : a.second)
+//       rv.push_back(b - 1);
+//   }
+// }
+//
+// int RMQ(SparseTable* lca, int x, int y) {
+//   int L = lca->rep[x];
+//   int R = lca->rep[y];
+//   if (R < L)
+//     swap(R, L);
+//   int j = lca->log_memo[R - L + 1];
+//   return min(lca->st[L][j], lca->st[R - (1 << j) + 1][j]);
+// }
+//
+// void evenLCP(int* str, SparseTable* lca, vector<int> &A_ext, vector<int> &LCP_ext) {
+//   int L;
+//   int R;
+//   for (int i = 1; i < A_ext.size(); i++) {
+//     L = A_ext[i - 1];
+//     R = A_ext[i];
+//     if (str[L - 1] != str[R - 1]) {
+//       LCP_ext.push_back(0);
+//     } else {
+//       LCP_ext.push_back(RMQ(lca, L + 1, R + 1) + 1);
+//     }
+//   }
+// }
 
-  for (auto a : m) {
-    for (auto b : a.second)
-      rv.push_back(b - 1);
-  }
-}
-
-int RMQ(SparseTable* lca, int x, int y) {
-  int L = lca->rep[x];
-  int R = lca->rep[y];
-  if (R < L)
-    swap(R, L);
-  int j = lca->log_memo[R - L + 1];
-  return min(lca->st[L][j], lca->st[R - (1 << j) + 1][j]);
-}
-
-void evenLCP(int* str, SparseTable* lca, vector<int> &A_ext, vector<int> &LCP_ext) {
-  int L;
-  int R;
-  for (int i = 1; i < A_ext.size(); i++) {
-    L = A_ext[i - 1];
-    R = A_ext[i];
-    if (str[L - 1] != str[R - 1]) {
-      LCP_ext.push_back(0);
-    } else {
-      LCP_ext.push_back(RMQ(lca, L + 1, R + 1) + 1);
+void displayLetterTrie(Node* root) {
+  stack<Node*> node_s;
+  node_s.push(root);
+  Node* curr = nullptr;
+  while (!node_s.empty()) {
+    curr = node_s.top();
+    if (!curr->_color) {
+      cout << "node" << curr << " [label=" << '\"' << curr->Lv << "\"];" << endl;
+      curr->_color = 1;
     }
+    if (curr->_next_edge < curr->children.size()) {
+      cout << "node" << curr << "->" << "node" << curr->children[curr->_next_edge]->target_node << "[label=\"";
+
+      for (int i = 0; i < curr->children[curr->_next_edge]->label_len; i++) {
+        if (*(curr->children[curr->_next_edge]->label + i) == INT_MAX) {
+          cout << '$';
+        } else {
+          cout << char(*(curr->children[curr->_next_edge]->label + i));
+        }
+      }
+      cout << "\"];" << endl;
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+      continue;
+    } else if (curr->suffix_index != 0){
+      cout << endl;
+      // cout <<
+      //cout << "arrived at leaf: " << curr->suffix_index << endl;
+    } else {
+      cout << "";
+      curr->_next_edge = 0;
+      //cout << "visited all nodes" << endl;
+    }
+    node_s.pop();
   }
+}
+
+void letterTrie(S &s) {
+  Node* root = createTrieNode(0);
+
+  transformString(s.input_string, s.rank_string);
+  s.rank_string.push_back(TERM);
+
+  for (int i = 0; i < s.rank_string.size(); i++) {
+    insertSuffix(root, s.rank_string.data() + i, i + 1);
+  }
+
+  collectNodes(root);
+  contractTrie(root);
+  //displayTrie(root);
+  vector<int> c_LCP;
+  vector<int> c_A;
+  buildArrays(root, &c_A, &c_LCP);
+  deleteCollectedTrie(root);
+
+  expand_sorted_suffix_array(&s.A_ext, &c_A);
+  expand_LCP_array(&s.LCP_ext, &c_LCP, &s.A_ext, s.input_string.data());
+
+  //create node as leaf to avoid edge_table leaks
+  s.root = createTrieNode(0, true);
+
+  constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
+  //displayTrie(s.root);
+  contractTrie(s.root);
+  cout << "digraph G {" << endl;
+  displayLetterTrie(s.root);
+  cout << "}" << endl;
+  deleteCollectedTrie(s.root);
+
 }
 
 void LCA_trie() {
@@ -69,7 +140,9 @@ void LCA_trie() {
   s.root = createTrieNode(0, true);
 
   constructFullOddTrie(s.root, s.LCP_ext, s.A_ext, s.input_string.data());
-
+  cout << "digraph G {" << endl;
+  displayTrie(s.root);
+  cout << "}" << endl;
   preprocessLCA(s);
   S se;
   even_sort(s.input_string.data(), s.A_ext, se.A_ext);
@@ -94,7 +167,7 @@ void LCA_trie() {
   constructFullOddTrie(se.root, se.LCP_ext, se.A_ext, s.input_string.data(), max);
   //s.input_string[s.input_string.size()]
   contractTrie(se.root);
-  displayTrie(se.root);
+  //displayTrie(se.root);
   deleteST(s.sp_tab);
   //displayTrie(s.root);
   deleteCollectedTrie(se.root);
@@ -102,6 +175,9 @@ void LCA_trie() {
 }
 
 int main() {
-  LCA_trie();
+  S s;
+  s.input_string = {98,97,110,97,110,97,98,97,110,100,97,110,97,TERM, TERM};
+  letterTrie(s);
+  // LCA_trie();
   return 0;
 }

@@ -110,6 +110,9 @@ void transformString(vector<int> &t_str, vector<int> &rv) {
     rv.push_back(*a);
 }
 
+/*
+  display function for printing Trie in dot language to stdout.
+*/
 void displayTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -296,48 +299,64 @@ void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S, 
   curr_node->children.push_back(e);
 }
 
+
 /*
-void eulerTour(Node* root, int suffix_count) {
-  vector<Node*> ET;
-  vector<int> L;
-  vector<int> R(suffix_count, -1);
+  acts as a bucket sort, treating the elements of A_ext as indexes for input_string
+  puts return values in rv
+*/
+void even_sort(int* input_string, vector<int> A_ext, vector<int> &rv) {
+  map<int, vector<int>> m;
+  for(int i = 0; i < A_ext.size(); i++) {
+    if (A_ext[i] - 2 < 0)
+      continue;
+    m[input_string[A_ext[i] - 2]].push_back(A_ext[i]);
+  }
 
-  Node* curr = nullptr;
-  stack<Node*> node_s;
-  node_s.push(root);
+  for (auto a : m) {
+    for (auto b : a.second)
+      rv.push_back(b - 1);
+  }
+}
 
-  while(!node_s.empty()) {
-    curr = node_s.top();
+/*
+  Range Minimum Query function, sparse table. constant time lookup.
+*/
 
-    ET.push_back(curr);
-    L.push_back(curr->Lv);
+int RMQ(SparseTable* lca, int x, int y) {
+  int L = lca->rep[x];
+  int R = lca->rep[y];
+  if (R < L)
+    swap(R, L);
+  int j = lca->log_memo[R - L + 1];
+  return min(lca->st[L][j], lca->st[R - (1 << j) + 1][j]);
+}
 
-    if (curr->_next_edge < curr->children.size()) {
-      node_s.push(curr->children[curr->_next_edge]->target_node);
-      curr->_next_edge++;
+/*
+  reducing LCA to RMQ via a precomputed Sparse Table data structure
+*/
+void evenLCP(int* str, SparseTable* lca, vector<int> &A_ext, vector<int> &LCP_ext) {
+  int L;
+  int R;
+  for (int i = 1; i < A_ext.size(); i++) {
+    L = A_ext[i - 1];
+    R = A_ext[i];
+    if (str[L - 1] != str[R - 1]) {
+      LCP_ext.push_back(0);
     } else {
-      if (curr->suffix_index)
-        R[curr->suffix_index] = ET.size() - 1;
-
-      curr->_next_edge = 0;
-      node_s.pop();
+      LCP_ext.push_back(RMQ(lca, L + 1, R + 1) + 1);
     }
   }
-
-  cout << "number of visited nodes: " << ET.size() << endl;
-
-  cout << "vector<int> level = {";
-  for(auto a : L) {
-    cout << a << ", ";
-  }
-  cout << "};" << endl;
-
-  cout << "vector<int> representative = {";
-  for (auto a : R) {
-    cout << a << ", ";
-  }
-  cout << "};" << endl;
 }
+
+/*
+  Euler tour of a constructed tree. visits all nodes in depth first search.
+  2n - 1 visits
+  Saves level(distance from root node) to return vector
+    size 2n - 1
+  saves representative index of first visit of each leaf node in the tree.
+    corresponds to index in level, size n
+
+  In the more general case, rep would save the first visit of EVERY node in the tree
 */
 void eulerTour(Node* root, vector<int> &level, vector<int> &rep) {
 
@@ -362,6 +381,12 @@ void eulerTour(Node* root, vector<int> &level, vector<int> &rep) {
   }
 }
 
+/*
+  precomputes sparse table data structure using level array and representative array.
+
+  In the more general case, this would also include a vector of visited nodes.
+  nlogn
+*/
 void constructST(SparseTable* ST, vector<int> &L, vector<int> &R) {
 
   // length of euler tour, 2n - 1
@@ -410,6 +435,10 @@ void constructST(SparseTable* ST, vector<int> &L, vector<int> &R) {
   }
 }
 
+/*
+  helper function for preprocessing a Tree
+  builds a Sparse Table data structure.
+*/
 void preprocessLCA(S &s) {
   int last_suffix = s.A_ext[s.A_ext.size() - 1] + 1;
   vector<int> level;
@@ -420,6 +449,9 @@ void preprocessLCA(S &s) {
   constructST(s.sp_tab, level, representative);
 }
 
+/*
+  deletes sparse table data structure.
+*/
 void deleteST(SparseTable* ST) {
   delete[] ST->log_memo;
   for (int i = 0; i < ST->max_n; i++){
