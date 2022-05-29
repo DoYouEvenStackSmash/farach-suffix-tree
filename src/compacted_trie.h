@@ -42,7 +42,13 @@ void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext
 
 void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S, int max = 0);
 
-//void eulerTour(Node* root, int suffix_count);
+
+void even_sort(int* input_string, vector<int> A_ext, vector<int> &rv);
+
+int RMQ(SparseTable* lca, int x, int y);
+
+void evenLCP(int* str, SparseTable* lca, vector<int> &A_ext, vector<int> &LCP_ext);
+
 void eulerTour(Node* root, vector<int> &level, vector<int> &rep);
 
 void constructST(SparseTable* ST, vector<int> &L, vector<int> &R);
