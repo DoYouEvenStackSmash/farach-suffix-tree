@@ -73,21 +73,29 @@ void LCA_trie() {
   preprocessLCA(s);
   S se;
   even_sort(s.input_string.data(), s.A_ext, se.A_ext);
+  /*
   cout << "A_ext" << endl;
   for (auto a : se.A_ext)
     cout << a << " ";
   cout << endl;
-
+  */
   int* str = s.input_string.data();
   SparseTable* lca = s.sp_tab;
   evenLCP(str, s.sp_tab, se.A_ext, se.LCP_ext);
+  /*
   cout << "LCP_ext" << endl;
   for (auto a : se.LCP_ext)
     cout << a << " ";
   cout << endl;
+  */
+  se.root = createTrieNode(0, true);
+  constructFullOddTrie(se.root, se.LCP_ext, se.A_ext, s.input_string.data());
+  //s.input_string[s.input_string.size()]
+  contractTrie(se.root);
+  displayTrie(se.root);
   deleteST(s.sp_tab);
   //displayTrie(s.root);
-
+  deleteCollectedTrie(se.root);
   deleteCollectedTrie(s.root);
 }
 
