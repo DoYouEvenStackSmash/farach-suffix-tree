@@ -5,6 +5,23 @@ constexpr size_t TERM = INT_MAX;
 
 using namespace std;
 
+struct SparseTable {
+  int max_n;
+  int* log_memo;
+  int** st;
+  int* rep;
+};
+
+struct S {
+  Node* root;
+  vector<int> input_string;
+  vector<int> rank_string;
+  vector<int> LCP_ext;
+  vector<int> A_ext;
+  SparseTable* sp_tab;
+};
+
+
 void insertSuffix(Node* root, int* start, int suffix_index);
 
 void collectNodes(Node* root);
@@ -25,6 +42,13 @@ void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext
 
 void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S);
 
-void eulerTour(Node* root, int suffix_count);
+//void eulerTour(Node* root, int suffix_count);
+void eulerTour(Node* root, vector<int> &level, vector<int> &rep);
+
+void constructST(SparseTable* ST, vector<int> &L, vector<int> &R);
+
+void preprocessLCA(S &s);
+
+void deleteST(SparseTable* ST);
 
 #endif
