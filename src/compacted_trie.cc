@@ -296,7 +296,7 @@ void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S) 
   curr_node->children.push_back(e);
 }
 
-
+/*
 void eulerTour(Node* root, int suffix_count) {
   vector<Node*> ET;
   vector<int> L;
@@ -326,7 +326,106 @@ void eulerTour(Node* root, int suffix_count) {
 
   cout << "number of visited nodes: " << ET.size() << endl;
 
+  cout << "vector<int> level = {";
   for(auto a : L) {
-    cout << "level: " << a << endl;
+    cout << a << ", ";
   }
+  cout << "};" << endl;
+
+  cout << "vector<int> representative = {";
+  for (auto a : R) {
+    cout << a << ", ";
+  }
+  cout << "};" << endl;
+}
+*/
+void eulerTour(Node* root, vector<int> &level, vector<int> &rep) {
+
+  Node* curr = nullptr;
+  stack<Node*> node_s;
+  node_s.push(root);
+
+  while(!node_s.empty()) {
+    curr = node_s.top();
+    level.push_back(curr->Lv);
+
+    if (curr->_next_edge < curr->children.size()) {
+      node_s.push(curr->children[curr->_next_edge]->target_node);
+      curr->_next_edge++;
+    } else {
+      if (curr->suffix_index)
+        rep[curr->suffix_index] = level.size() - 1;
+
+      curr->_next_edge = 0;
+      node_s.pop();
+    }
+  }
+}
+
+void constructST(SparseTable* ST, vector<int> &L, vector<int> &R) {
+
+  // length of euler tour, 2n - 1
+  ST->max_n = L.size();
+
+  // allocate memory for preprocessed log values
+  // maximum interval size 2n - 1, maximum index 2n
+  ST->log_memo = new int[ST->max_n + 1];
+  ST->log_memo[1] = 0;
+  for (int i = 2; i <= ST->max_n; i++)
+    ST->log_memo[i] = ST->log_memo[i / 2] + 1;
+
+  // k >= 2 ^ floor(binary_log(max_n))
+  // set k to the largest log value
+  int k = ST->log_memo[ST->max_n];
+
+  // allocate memory for sparse table
+  // sparse table is nlogn size, max_n * (k + 1)
+  ST->st = new int*[ST->max_n];
+
+  for (int i = 0; i < ST->max_n; i++) {
+    ST->st[i] = new int[k + 1];
+    // each element in the array is minimum of itself
+    ST->st[i][0] = L[i];
+  }
+
+  /*
+    populates sparse table with dp, column by column
+    elements x are already populated from initial allocation.
+    [x, 1, 4],
+    [x, 2, 5],
+    [x, 3, 6]
+    (2 ^ j) is the current size of the window,
+    covers two windows from previous column
+  */
+  for (int j = 1; j <= k; j++) {
+    for (int i = 0; i + (1 << j) <= ST->max_n; i++) {
+      ST->st[i][j] = min(ST->st[i][j - 1], ST->st[i + (1 << (j - 1))][j - 1]);
+    }
+  }
+
+  ST->rep = new int[R.size()];
+  // transfer euler tour representative array
+  for (int i = 0; i < R.size(); i++) {
+    ST->rep[i] = R[i];
+  }
+}
+
+void preprocessLCA(S &s) {
+  int last_suffix = s.A_ext[s.A_ext.size() - 1] + 1;
+  vector<int> level;
+  vector<int> representative(last_suffix, -1);
+
+  eulerTour(s.root, level, representative);
+  s.sp_tab = new SparseTable;
+  constructST(s.sp_tab, level, representative);
+}
+
+void deleteST(SparseTable* ST) {
+  delete[] ST->log_memo;
+  for (int i = 0; i < ST->max_n; i++){
+    delete[] ST->st[i];
+  }
+  delete[] ST->st;
+  delete[] ST->rep;
+  delete ST;
 }
