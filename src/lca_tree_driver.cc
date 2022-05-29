@@ -3,43 +3,6 @@
 #include "compacted_trie.h"
 using namespace std;
 
-// void even_sort(int* input_string, vector<int> A_ext, vector<int> &rv) {
-//   map<int, vector<int>> m;
-//   for(int i = 0; i < A_ext.size(); i++) {
-//     if (A_ext[i] - 2 < 0)
-//       continue;
-//     m[input_string[A_ext[i] - 2]].push_back(A_ext[i]);
-//   }
-//
-//   for (auto a : m) {
-//     for (auto b : a.second)
-//       rv.push_back(b - 1);
-//   }
-// }
-//
-// int RMQ(SparseTable* lca, int x, int y) {
-//   int L = lca->rep[x];
-//   int R = lca->rep[y];
-//   if (R < L)
-//     swap(R, L);
-//   int j = lca->log_memo[R - L + 1];
-//   return min(lca->st[L][j], lca->st[R - (1 << j) + 1][j]);
-// }
-//
-// void evenLCP(int* str, SparseTable* lca, vector<int> &A_ext, vector<int> &LCP_ext) {
-//   int L;
-//   int R;
-//   for (int i = 1; i < A_ext.size(); i++) {
-//     L = A_ext[i - 1];
-//     R = A_ext[i];
-//     if (str[L - 1] != str[R - 1]) {
-//       LCP_ext.push_back(0);
-//     } else {
-//       LCP_ext.push_back(RMQ(lca, L + 1, R + 1) + 1);
-//     }
-//   }
-// }
-
 void displayLetterTrie(Node* root) {
   stack<Node*> node_s;
   node_s.push(root);
@@ -176,7 +139,9 @@ void LCA_trie() {
 
 int main() {
   S s;
-  s.input_string = {98,97,110,97,110,97,98,97,110,100,97,110,97,TERM, TERM};
+  s.input_string = {98,97,110,97,110,97,98,97,110,97,110,97, TERM};
+    //,115, TERM, TERM};
+    // 110,100,97,110,97,TERM, TERM};
   letterTrie(s);
   // LCA_trie();
   return 0;
