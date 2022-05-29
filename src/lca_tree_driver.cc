@@ -89,7 +89,8 @@ void LCA_trie() {
   cout << endl;
   */
   se.root = createTrieNode(0, true);
-  constructFullOddTrie(se.root, se.LCP_ext, se.A_ext, s.input_string.data());
+  int max = s.input_string.size() - 1;
+  constructFullOddTrie(se.root, se.LCP_ext, se.A_ext, s.input_string.data(), max);
   //s.input_string[s.input_string.size()]
   contractTrie(se.root);
   displayTrie(se.root);

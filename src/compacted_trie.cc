@@ -242,11 +242,11 @@ void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext
   construct NEW full odd trie using LCP and sorted array
 */
 
-void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S) {
+void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S, int max) {
   Node* curr_node = nullptr;
   int curr_depth = 0;
   int LHS = 0;
-  int END = A[A.size() - 1];
+  int END = (max == 0 ? A[A.size() - 1] : max);
 
   stack<Node*> node_stack;
   node_stack.push(root);
