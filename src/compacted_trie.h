@@ -40,7 +40,7 @@ void expand_sorted_suffix_array(vector<int>* A_ext, vector<int>* A);
 
 void expand_LCP_array(vector<int>* LCP_ext, vector<int>* LCP, vector<int> *A_ext, int* S);
 
-void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S);
+void constructFullOddTrie(Node* root, vector<int>& LCP, vector<int>& A, int* S, int max = 0);
 
 //void eulerTour(Node* root, int suffix_count);
 void eulerTour(Node* root, vector<int> &level, vector<int> &rep);
