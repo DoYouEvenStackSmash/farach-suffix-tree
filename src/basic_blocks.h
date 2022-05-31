@@ -1,7 +1,7 @@
 #ifndef BASIC_BLOCKS_H
 #define BASIC_BLOCKS_H
 using namespace std;
-constexpr size_t ALPHABET_SIZE = 256;
+constexpr size_t ALPHABET_SIZE = 8;
 struct Edge;
 
 /*
